@@ -4,40 +4,18 @@
 // https://github.com/IDMNYU/p5.js-func/blob/master/examples/easing3_animation/sketch.js
 
 let ease = new p5.Ease();
-let styles = ease.listAlgos();
 
-let MAX_AUDIO_RANG = 20000; //Hrz
+let t, x, y, tx, ty, px, py;
+let speed = 0.002;
 
-let curstyle;
-let speed = 0.02;
-let t = 0;
-let doclear;
-
-let x, y, tx, ty, x1, y1, px, py;
-
-let osc, rev;
-
-let tb; // textbox
-
-let sound_styles = [
-    "sine",
-    "cosine",
-    "sawtooth",
-    "sawdown",
-    "phasor",
-    "square",
-    "rectangle",
-    "pulse",
-    "triangle",
-    "buzz",
-];
-
+let player;
 function setup() {
-    createCanvas(windowWidth, windowHeight);
+    createCanvas(500, 400);
+    // createCanvas(windowWidth, windowHeight);
     background(255);
     fill(0);
 
-    curstyle = random(styles);
+    player = new Player(width / 2, height / 2);
 
     x = width / 2;
     y = height / 2;
@@ -46,73 +24,159 @@ function setup() {
     px = width / 2;
     py = height / 2;
 
-    osc = new p5.Oscillator();
-    osc.setType("sawtooth");
-    osc.freq(440);
-    osc.amp(0.3);
-    osc.start();
-
-    rev = new p5.Reverb();
-    rev.process(osc, 5, 10);
-
-    tb = createDiv("");
-    tb.style("font-family", "Courier");
-    tb.style("font-size", "12px");
-    tb.position(width * 0.1, height * 0.1);
-    tb.size(500, 500);
+    x = px;
+    y = py;
+    tx = mouseX;
+    ty = mouseY;
+    t = 0;
 }
 
 function draw() {
-    background(255);
+    background(55);
 
-    let q = ease["tripleLinear"](t);
+    let q = ease["smootherStep"](t);
+    // let q =  (x - tx ) * .1;
+    // print(q)
     x1 = map(q, 0, 1, x, tx);
     y1 = map(q, 0, 1, y, ty);
-    noFill();
-    stroke(255, 0, 0);
-    ellipse(tx, ty, 30, 30);
-    fill(0);
-    noStroke();
-    ellipse(x1, y1, 15, 15);
 
-    let hs = `p5.Ease(): ${curstyle}<br><br>
-click around.`;
-
-    tb.html(hs);
-
-    let f = constrain(dist(x1, y1, px, py) * 100, 0, 880);
-    let a = constrain(dist(x1, y1, px, py), 0, 0.3);
-    osc.freq(f);
-    osc.amp(a);
+    // render(t, x, y, tx, ty, px, py);
 
     px = x1;
     py = y1;
 
     t += speed;
+
+    // what does this do??
+    // cap acceleration
     if (t > 1) {
         t = 1;
-        x = tx;
-        y = ty;
+        // x = tx;
+        // y = ty;
     }
     set_loction();
+    player.read_keys();
+    player.move_target();
+    player.calc_movement();
+    player.render();
+}
+
+function render(t, x, y, tx, ty, px, py) {
+    push();
+    noFill();
+    stroke("red");
+    ellipse(tx, ty, 30, 30);
+    pop();
+
+    for (let size = 50; size >= 0; size -= 5) {
+        push();
+        fill(map(size, 0, 50, 0, 255));
+        noStroke();
+        ellipse(x1, y1, size, size);
+        pop();
+    }
+    push();
+
+    fill("black");
+    noStroke();
+    ellipse(x1, y1, 15, 15);
+
+    fill("green");
+    noStroke();
+    ellipse(px, py, 10, 10);
+
+    fill("blue");
+    noStroke();
+    ellipse(mouseX, mouseY, 10, 10);
+
+    pop();
 }
 
 function set_loction() {
-    if (frameCount % 50 === 0) {
-        // curstyle = "tripleLinear"/random(styles);
-        x = px;
-        y = py;
-        tx = mouseX;
-        ty = mouseY;
-        t = 0;
-    }
+    tx = mouseX;
+    ty = mouseY;
+    x = px;
+    y = py;
 }
 function mousePressed() {
-    curstyle = random(styles);
     // osc.setType(random(sound_styles));
     x = px;
     y = py;
     tx = mouseX;
     ty = mouseY;
     t = 0;
+}
+
+class Player {
+    constructor(x = 0, y = 0, target_x = 100, target_y = 100) {
+        this.pos = createVector(x, y);
+        this.prev = createVector(0, 0);
+        this.tar = createVector(target_x, target_y);
+        this.dir = createVector(0, 0);
+        this.target_speed = 5;
+        this.speed = 0.1;
+    }
+
+    move_target() {
+        this.tar.add(this.dir.copy().mult(this.target_speed));
+
+        // bring player to a stop
+        this.dir.mult(.01)
+    }
+
+    calc_movement() {
+        // vector easing
+        // let ease_persentage = ease["smootherStep"](t);
+        // let q =  (x - tx ) * .1;
+        // x1 = map(ease_persentage, 0, 1, this.pos.x, this.tar.x);
+        // y1 = map(ease_persentage, 0, 1, this.pos.y, this.tar.y);
+        let dist_x = (this.tar.x - this.pos.x) * this.speed;
+        let dist_y = (this.tar.y - this.pos.y) * this.speed;
+
+        let distance = createVector(dist_x, dist_y);
+
+        this.pos.add(distance)
+        // this.pos.x += distance_x;
+        // this.pos.x += x1;
+
+        //set previouse value
+        this.prev.x = this.pos.x;
+    }
+
+    render() {
+        this.show_circle(this.pos);
+        // this.show_circle(this.tar, "green");
+    }
+
+    set_direction(_dir) {
+        this.dir = _dir.copy();
+    }
+
+    show_circle(point, col = "orange", sz = 30) {
+        push();
+        // noFill();
+        // stroke(col);
+        noStroke();
+        fill(col);
+        ellipse(point.x, point.y, sz, sz);
+        pop();
+    }
+
+    read_keys() {
+        if (keyIsDown(RIGHT_ARROW) || key === "d") {
+            player.dir = createVector(1, 0);
+        }
+        if (keyIsDown(LEFT_ARROW) || key === "a") {
+            player.dir = createVector(-1, 0);
+        }
+        if (keyIsDown(DOWN_ARROW) || key === "s") {
+            player.dir = createVector(0, 1);
+        }
+        if (keyIsDown(UP_ARROW) || key === "w") {
+            player.dir = createVector(0, -1);
+        }
+
+        // todo add diagonals to movement
+
+    }
 }
