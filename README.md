@@ -8,7 +8,9 @@ oranbusiness@gmail.com
 ```
 
 
-
+# Devlog
+# Buttery smooth movement is here!
+![](buttery_smooth_movement_v1.gif)
 # Goals
 - ~~mouse fallow easing~~
 - arrow keys movement
