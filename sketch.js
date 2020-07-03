@@ -32,7 +32,7 @@ function setup() {
 }
 
 function draw() {
-    background(55);
+    background(55,150);
 
     let q = ease["smootherStep"](t);
     // let q =  (x - tx ) * .1;
@@ -115,6 +115,7 @@ class Player {
         this.dir = createVector(0, 0);
         this.target_speed = 5;
         this.speed = 0.1;
+        
     }
 
     move_target() {
@@ -180,3 +181,10 @@ class Player {
 
     }
 }
+
+function mousePressed()
+{
+ player.tar.set(mouseX,mouseY)
+}
+
+
